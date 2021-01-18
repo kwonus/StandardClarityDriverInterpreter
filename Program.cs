@@ -102,15 +102,11 @@ namespace StandardClarityDriverInterpreter
                                         IClarityResult result = null;
                                         switch (explain.directive)
                                         {
-                                            case HMISegment.PERSISTENCE:    result = driver.Write(segment.rawFragments[0], normalized.scope, segment.rawFragments[1]); break;
+                                            case HMISegment.CONTROL:        result = driver.Write(segment.rawFragments[0], normalized.scope, segment.rawFragments[1]); break;
                                             case HMISegment.STATUS:         result = driver.Read(segment.rawFragments[0], normalized.scope); break;
                                             case HMISegment.REMOVAL:        result = driver.Remove(segment.rawFragments[0], normalized.scope); break;
                                             case HMISegment.SEARCH:         result = driver.Search(command.statement); break;
-                                            case HMISegment.FILE:           if (verb == HMISegment.EXPORT)
-                                                                                result = driver.Export(command.statement);
-                                                                            else if (verb == HMISegment.EXPORT)
-                                                                                result = driver.Import(command.statement);
-                                                                            break;
+                                            case HMISegment.DISPLAY:        result = driver.Export(command.statement);
 
                                             default: continue;
 
