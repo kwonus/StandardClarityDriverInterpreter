@@ -15,8 +15,8 @@ namespace StandardClarityDriverInterpreter
         {
             var driver = new StandardClarityDriver();
 
-            var debugResult = driver.Read("debug", HMIScope.Session);
-            bool debug = debugResult.success && debugResult.warnings == null;
+            var debugResult = driver.ReadInt("debug", HMIScope.Session);
+            bool debug = debugResult.success && (debugResult.warnings == null) && (debugResult.result == 1);
 
             Console.Write("> ");
             for (string line = Console.ReadLine(); line.Length > 0; line = Console.ReadLine())
@@ -106,7 +106,7 @@ namespace StandardClarityDriverInterpreter
                                             case HMISegment.STATUS:         result = driver.Read(segment.rawFragments[0], normalized.scope); break;
                                             case HMISegment.REMOVAL:        result = driver.Remove(segment.rawFragments[0], normalized.scope); break;
                                             case HMISegment.SEARCH:         result = driver.Search(command.statement); break;
-                                            case HMISegment.DISPLAY:        result = driver.Export(command.statement);
+                                            case HMISegment.DISPLAY:        result = driver.Display(command.statement, "*"); break;
 
                                             default: continue;
 
@@ -120,14 +120,13 @@ namespace StandardClarityDriverInterpreter
                         }
 
                         //  Reset debuf variables incase there was a change
-                        debugResult = driver.Read("debug", HMIScope.Session);
-                        debug = debugResult.success && debugResult.warnings == null;
+                        debugResult = driver.ReadInt("debug", HMIScope.Session);
+                        debug = debugResult.success && (debugResult.warnings == null) && (debugResult.result == 1);
 
-                        foreach (var verb in results.Keys)
+                        foreach (var directive in results.Keys)
                         {
                             var error = false;
-                            var specificResults = results[verb];
-                            var explain = HMISegment.IsVerb(verb);
+                            var specificResults = results[directive];
                             var output = new List<string>();
 
                             var comma = "";
@@ -139,7 +138,7 @@ namespace StandardClarityDriverInterpreter
                                     foreach (var message in result.errors)
                                         Console.WriteLine(message);
                                 }
-                                if ((explain.directive == HMISegment.STATUS) && !error)
+                                if ((directive == HMISegment.STATUS) && !error)
                                 {
                                     var resultString = (IClarityResultString) result;
                                     Console.WriteLine(comma + resultString.result);
