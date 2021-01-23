@@ -1,11 +1,11 @@
-﻿using ClarityDriverDefault;
-using ClarityHMI;
+﻿using QuelleDriverDefault;
+using QuelleHMI;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
 
-namespace StandardClarityDriverInterpreter
+namespace QuelleDriverInterpreter
 {
     class Program
     {
@@ -13,7 +13,7 @@ namespace StandardClarityDriverInterpreter
         
         static void Main(string[] args)
         {
-            var driver = new StandardClarityDriver();
+            var driver = new QuelleDriver();
 
             var debugResult = driver.ReadInt("debug", HMIScope.Session);
             bool debug = debugResult.success && (debugResult.warnings == null) && (debugResult.result == 1);
@@ -45,11 +45,11 @@ namespace StandardClarityDriverInterpreter
                     else if (normalized.scope == HMIScope.Undefined)
                     {
                         continuingExecution = false;
-                        Console.WriteLine("error: " + "Unspecific command normalization error; Please contact vendor about this Clarity driver implementation");
+                        Console.WriteLine("error: " + "Unspecific command normalization error; Please contact vendor about this Quelle driver implementation");
                     }
                     if (continuingExecution && (command.HasMacro() != HMIScope.Undefined))
                     {
-                        var result = driver.Write("clarity.macro." + command.macroName, command.HasMacro(), command.statement.statement);
+                        var result = driver.Write("quelle.macro." + command.macroName, command.HasMacro(), command.statement.statement);
                         if (result.errors != null)
                         {
                             continuingExecution = false;
@@ -59,7 +59,7 @@ namespace StandardClarityDriverInterpreter
                         else if (!result.success)
                         {
                             continuingExecution = false;
-                            Console.WriteLine("error: " + "Unspecific macro error; Please contact vendor about this Clarity driver implementation");
+                            Console.WriteLine("error: " + "Unspecific macro error; Please contact vendor about this Quelle driver implementation");
                         }
                         else
                         {
@@ -73,11 +73,11 @@ namespace StandardClarityDriverInterpreter
                     }
                     if (continuingExecution)
                     {
-                        var results = new Dictionary<string, List<IClarityResult>>();
+                        var results = new Dictionary<string, List<IQuelleResult>>();
 
                         if (normalized.normalization.ContainsKey(HMISegment.SET))
                         {
-                            var list = new List<IClarityResult>();
+                            var list = new List<IQuelleResult>();
 
                             foreach (var segment in normalized.normalization[HMISegment.SET])
                             {
@@ -96,10 +96,10 @@ namespace StandardClarityDriverInterpreter
                                 if (explain.directive != null)
                                 {
                                     bool add = !results.ContainsKey(explain.directive);
-                                    var list = add ? new List<IClarityResult>() : results[verb];
+                                    var list = add ? new List<IQuelleResult>() : results[verb];
                                     foreach (var segment in normalized.normalization[verb])
                                     {
-                                        IClarityResult result = null;
+                                        IQuelleResult result = null;
                                         switch (explain.directive)
                                         {
                                             case HMISegment.CONTROL:        result = driver.Write(segment.rawFragments[0], normalized.scope, segment.rawFragments[1]); break;
@@ -130,7 +130,7 @@ namespace StandardClarityDriverInterpreter
                             var output = new List<string>();
 
                             var comma = "";
-                            foreach (IClarityResult result in specificResults)
+                            foreach (IQuelleResult result in specificResults)
                             {
                                 if (result.errors != null)
                                 {
@@ -140,7 +140,7 @@ namespace StandardClarityDriverInterpreter
                                 }
                                 if ((directive == HMISegment.STATUS) && !error)
                                 {
-                                    var resultString = (IClarityResultString) result;
+                                    var resultString = (IQuelleResultString) result;
                                     Console.WriteLine(comma + resultString.result);
                                     comma = ", ";
                                 }
@@ -159,7 +159,7 @@ namespace StandardClarityDriverInterpreter
                 }
                 else
                 {
-                    Console.WriteLine("error: " + "Statement is not expected to be null; Clarity driver implementation error");
+                    Console.WriteLine("error: " + "Statement is not expected to be null; Quelle driver implementation error");
                 }
                 if (debug)
                 {
