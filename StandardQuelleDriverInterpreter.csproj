@@ -10,7 +10,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\StandardClarityDriver\StandardClarityDriver.csproj" />
+    <ProjectReference Include="..\StandardClarityDriver\StandardQuelleDriver.csproj" />
   </ItemGroup>
 
 </Project>

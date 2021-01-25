@@ -15,7 +15,7 @@ namespace QuelleDriverInterpreter
         {
             var driver = new QuelleDriver();
 
-            var debugResult = driver.ReadInt("debug", HMIScope.Session);
+            var debugResult = driver.ReadInt("debug", HMIScope.Statement);
             bool debug = debugResult.success && (debugResult.warnings == null) && (debugResult.result == 1);
 
             Console.Write("> ");
@@ -49,7 +49,8 @@ namespace QuelleDriverInterpreter
                     }
                     if (continuingExecution && (command.HasMacro() != HMIScope.Undefined))
                     {
-                        var result = driver.Write("quelle.macro." + command.macroName, command.HasMacro(), command.statement.statement);
+                        var macroDef = (HMIMacroDefintion)command.dependentClause;
+                        var result = driver.Write("quelle.macro." + macroDef.macroName, macroDef.macroScope, command.statement.statement);
                         if (result.errors != null)
                         {
                             continuingExecution = false;
@@ -63,7 +64,7 @@ namespace QuelleDriverInterpreter
                         }
                         else
                         {
-                            continuingExecution = command.macroSimultaneousExecution;
+                            continuingExecution = false;    // We used to allow ececution of macros and defintion of macros at the same time (now it is always two steps)
                         }
                         if (result.warnings != null)
                         {
@@ -75,23 +76,23 @@ namespace QuelleDriverInterpreter
                     {
                         var results = new Dictionary<string, List<IQuelleResult>>();
 
-                        if (normalized.normalization.ContainsKey(HMISegment.SET))
+                        if (normalized.normalization.ContainsKey(HMIPhrase.SET))
                         {
                             var list = new List<IQuelleResult>();
 
-                            foreach (var segment in normalized.normalization[HMISegment.SET])
+                            foreach (var segment in normalized.normalization[HMIPhrase.SET])
                             {
                                 list.Add(
                                 driver.Write(segment.rawFragments[0], normalized.scope, segment.rawFragments[1])
                                 );
                             }
-                            results.Add(HMISegment.SET, list);
+                            results.Add(HMIPhrase.SET, list);
                         }
                         foreach (var verb in normalized.normalization.Keys)
                         {
-                            if (verb != HMISegment.SET) // SET was already processed, so skip here
+                            if (verb != HMIPhrase.SET) // SET was already processed, so skip here
                             {
-                                var explain = HMISegment.IsVerb(verb);
+                                var explain = HMIPhrase.IsVerb(verb);
 
                                 if (explain.directive != null)
                                 {
@@ -102,11 +103,11 @@ namespace QuelleDriverInterpreter
                                         IQuelleResult result = null;
                                         switch (explain.directive)
                                         {
-                                            case HMISegment.CONTROL:        result = driver.Write(segment.rawFragments[0], normalized.scope, segment.rawFragments[1]); break;
-                                            case HMISegment.STATUS:         result = driver.Read(segment.rawFragments[0], normalized.scope); break;
-                                            case HMISegment.REMOVAL:        result = driver.Remove(segment.rawFragments[0], normalized.scope); break;
-                                            case HMISegment.SEARCH:         result = driver.Search(command.statement); break;
-                                            case HMISegment.DISPLAY:        result = driver.Display(command.statement, "*"); break;
+                                            case HMIPhrase.SETTERS:        result = driver.Write(segment.rawFragments[0], normalized.scope, segment.rawFragments[1]); break;
+                                            case HMIPhrase.GETTERS:         result = driver.Read(segment.rawFragments[0], normalized.scope); break;
+                                            case HMIPhrase.REMOVAL:        result = driver.Remove(segment.rawFragments[0], normalized.scope); break;
+                                            case HMIPhrase.SEARCH:         result = driver.Search(command.statement); break;
+                                            case HMIPhrase.DISPLAY:        result = driver.Display(command.statement, "*"); break;
 
                                             default: continue;
 
@@ -120,7 +121,7 @@ namespace QuelleDriverInterpreter
                         }
 
                         //  Reset debuf variables incase there was a change
-                        debugResult = driver.ReadInt("debug", HMIScope.Session);
+                        debugResult = driver.ReadInt("debug", HMIScope.Statement);
                         debug = debugResult.success && (debugResult.warnings == null) && (debugResult.result == 1);
 
                         foreach (var directive in results.Keys)
@@ -138,7 +139,7 @@ namespace QuelleDriverInterpreter
                                     foreach (var message in result.errors)
                                         Console.WriteLine(message);
                                 }
-                                if ((directive == HMISegment.STATUS) && !error)
+                                if ((directive == HMIPhrase.GETTERS) && !error)
                                 {
                                     var resultString = (IQuelleResultString) result;
                                     Console.WriteLine(comma + resultString.result);
