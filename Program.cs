@@ -25,6 +25,22 @@ namespace QuelleDriverInterpreter
                 if (line.Trim().ToLower() == "@exit")
                     break;
 
+                //  Bybass HMIStatement for now
+                if (line.Trim().ToLower().StartsWith("@generate"))
+                {
+                    var tokens = line.ToLower().Split(HMIClause.Whitespace, StringSplitOptions.RemoveEmptyEntries);
+
+                    if (tokens.Length == 3 && tokens[0] == "@generate")
+                    {
+                        var generator = XGen.Factory(tokens[1].Trim());
+                        if (generator != null)
+                        {
+                            var code = generator.export(tokens[2].Trim());
+                            Console.WriteLine(code);
+                        }
+                    }
+                    continue;   // no error handling here, just silent failure for now; TODO: fix later
+                }
                 HMICommand command = new HMICommand(line);
 
                 if (command.statement != null && command.statement.segmentation != null && command.statement.segmentation.Count >= 1 && command.errors.Count == 0)
