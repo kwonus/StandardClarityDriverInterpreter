@@ -28,15 +28,36 @@ namespace QuelleDriverInterpreter
                 //  Bybass HMIStatement for now
                 if (line.Trim().ToLower().StartsWith("@generate"))
                 {
-                    var tokens = line.ToLower().Split(HMIClause.Whitespace, StringSplitOptions.RemoveEmptyEntries);
+                    var expanded = line.ToLower().Replace("!", " ! ").Replace(">", " > ");
+                    var tokens = expanded.Split(HMIClause.Whitespace, line.Contains('!') ? 6 : 5, StringSplitOptions.RemoveEmptyEntries);
 
-                    if (tokens.Length == 3 && tokens[0] == "@generate")
+                    if (tokens[0] == "@generate")
                     {
-                        var generator = XGen.Factory(tokens[1].Trim());
-                        if (generator != null)
+                        bool valid3 = (tokens.Length == 3);
+                        bool valid5 = (tokens.Length == 5) && (tokens[3] == ">");
+                        bool valid6 = (tokens.Length == 6)
+                                 && ( (tokens[3] == "!") && (tokens[4] == ">")
+                                    ||(tokens[3] == ">") && (tokens[4] == "!")
+                                    );
+
+                        if (valid3 || valid5 || valid6)
                         {
-                            var code = generator.export(tokens[2].Trim());
-                            Console.WriteLine(code);
+                            var generator = XGen.Factory(tokens[1].Trim());
+                            if (generator != null)
+                            {
+                                var code = generator.export(tokens[2].Trim());
+                                if (valid5 || valid6)
+                                {
+                                    var file = valid6 ? tokens[5].Trim() : tokens[4].Trim();
+                                    if (valid5 && File.Exists(file))
+                                        Console.WriteLine("ERROR: File already exists.");
+                                    else using (StreamWriter writer = new StreamWriter(file))
+                                    {
+                                        writer.Write(code);
+                                    }
+                                }
+                                else Console.WriteLine(code);
+                            }
                         }
                     }
                     continue;   // no error handling here, just silent failure for now; TODO: fix later
