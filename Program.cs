@@ -11,6 +11,11 @@ namespace QuelleDriverInterpreter
     {
         private static JsonSerializer serializer = new JsonSerializer();
         
+        static void prompt()
+        {
+            Console.WriteLine();
+            Console.Write("> ");
+        }
         static void Main(string[] args)
         {
             var driver = new QuelleDriver();
@@ -22,45 +27,26 @@ namespace QuelleDriverInterpreter
             Console.Write("> ");
             for (string line = Console.ReadLine(); /**/; line = Console.ReadLine())
             {
-                if (line.Trim().ToLower() == "@exit")
-                    break;
-
-                //  Bybass HMIStatement for now
-                if (line.Trim().ToLower().StartsWith("@generate"))
+                line = line.Trim();
+                if (line.Length < 0)
                 {
-                    var expanded = line.ToLower().Replace("!", " ! ").Replace(">", " > ");
-                    var tokens = expanded.Split(HMIClause.Whitespace, line.Contains('!') ? 6 : 5, StringSplitOptions.RemoveEmptyEntries);
-
-                    if (tokens[0] == "@generate")
-                    {
-                        bool valid3 = (tokens.Length == 3);
-                        bool valid5 = (tokens.Length == 5) && (tokens[3] == ">");
-                        bool valid6 = (tokens.Length == 6)
-                                 && ( (tokens[3] == "!") && (tokens[4] == ">")
-                                    ||(tokens[3] == ">") && (tokens[4] == "!")
-                                    );
-
-                        if (valid3 || valid5 || valid6)
-                        {
-                            var generator = XGen.Factory(tokens[1].Trim());
-                            if (generator != null)
-                            {
-                                var code = generator.export(tokens[2].Trim());
-                                if (valid5 || valid6)
-                                {
-                                    var file = valid6 ? tokens[5].Trim() : tokens[4].Trim();
-                                    if (valid5 && File.Exists(file))
-                                        Console.WriteLine("ERROR: File already exists.");
-                                    else using (StreamWriter writer = new StreamWriter(file))
-                                    {
-                                        writer.Write(code);
-                                    }
-                                }
-                                else Console.WriteLine(code);
-                            }
-                        }
-                    }
-                    continue;   // no error handling here, just silent failure for now; TODO: fix later
+                    prompt();
+                    continue;
+                }
+                if (line.ToLower() == "@exit")
+                {
+                    break;
+                }
+                //  Bybass HMIStatement only for @Help and @Exit
+                //
+                if (line.Trim().ToLower().StartsWith("@help"))
+                {
+                    if (line.ToLower() == "@help")
+                        Console.WriteLine(driver.Help());
+                    else
+                        Console.WriteLine(driver.Help(line.Substring("@help".Length)));
+                    prompt();
+                    continue;
                 }
                 HMICommand command = new HMICommand(line);
 
@@ -73,6 +59,18 @@ namespace QuelleDriverInterpreter
                         //  Reset debuf variables incase there was a change
                         debugResult = driver.ReadInt("debug", HMIScope.Statement);
                         debug = debugResult.success && (debugResult.warnings == null) && (debugResult.result == 1);
+
+                        foreach (var message in command.warnings)
+                        {
+                            Console.WriteLine("WARNING: " + message);
+                        }
+                    }
+                    else
+                    {
+                        foreach (var message in command.errors)
+                        {
+                            Console.WriteLine("ERROR: " + message);
+                        }
                     }
                 }
                 else
@@ -91,10 +89,9 @@ namespace QuelleDriverInterpreter
                         serializer.Serialize(writer, command);
                     }
                 }
-                Console.WriteLine();
-                Console.Write("> ");
+                prompt();
             }
-            Console.WriteLine("done");
+            Console.WriteLine("done.");
         }
     }
 }
