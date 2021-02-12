@@ -21,7 +21,7 @@ namespace QuelleDriverInterpreter
             var driver = new QuelleDriver();
             HMICommand.Intitialize(driver);
 
-            var debugResult = driver.ReadInt("debug", HMIScope.Statement);
+            var debugResult = driver.ReadInt("debug");
             bool debug = debugResult.success && (debugResult.warnings == null) && (debugResult.result == 1);
 
             Console.Write("> ");
@@ -57,7 +57,7 @@ namespace QuelleDriverInterpreter
                     if (ok)
                     {
                         //  Reset debuf variables incase there was a change
-                        debugResult = driver.ReadInt("debug", HMIScope.Statement);
+                        debugResult = driver.ReadInt("debug");
                         debug = debugResult.success && (debugResult.warnings == null) && (debugResult.result == 1);
 
                         foreach (var message in command.warnings)
