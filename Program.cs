@@ -1,10 +1,7 @@
 ﻿using Quelle.DriverDefault;
-using Quelle.Listener;
 using QuelleHMI;
-using QuelleHMI.Session;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Threading;
 
 namespace QuelleDriverInterpreter
@@ -45,24 +42,6 @@ namespace QuelleDriverInterpreter
                     prompt();
                     continue;
                 }
-
-                #if ABILITY_TO_START_STOP_SERVER_ON_LOCALHOST
-                if (line.ToLower().StartsWith("@start"))
-                {
-                    var port = uint.Parse(line.Substring("@start".Length));
-                    if (port > 0 && !Listeners.ContainsKey(port))
-                    {
-                        var listener = Listener.Start(port);
-                        Listeners.Add(port, listener);
-                    }
-                    continue;
-                }
-                if (line.ToLower() == "@stop")
-                {
-                    Listener.Stop(Listeners);
-                    continue;
-                }
-                #endif
 
                 HMICommand command = new HMICommand(line);
 
